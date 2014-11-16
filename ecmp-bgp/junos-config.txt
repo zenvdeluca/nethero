@@ -1,0 +1,91 @@
+## Last commit: 2014-11-16 12:46:54 UTC by root
+version 12.3R6.6;
+system {
+    host-name R1;
+    root-authentication {
+        encrypted-password "$1$CZdc4b2P$N3ZoajJh8AQqUSgP4SCRN/"; ## SECRET-DATA
+    }
+    services {
+        ssh;
+    }
+    syslog {
+        user * {
+            any emergency;
+        }
+        file messages {
+            any notice;
+            authorization info;
+        }
+        file interactive-commands {
+            interactive-commands any;
+        }
+    }
+}
+interfaces {
+    em0 {
+        unit 0 {
+            family inet {
+                address 192.168.0.55/24;
+            }
+        }
+    }
+    em1 {
+        unit 0 {
+            family inet {
+                address 10.136.0.1/24;
+            }
+        }
+    }
+}
+forwarding-options {
+    load-balance {
+        indexed-load-balance;
+    }
+    hash-key {
+        family inet {
+            layer-3;
+            layer-4;
+        }
+    }
+}
+routing-options {
+    static {
+        route 0.0.0.0/0 next-hop 192.168.0.1;
+    }
+    router-id 10.136.0.1;
+    autonomous-system 65400;
+    forwarding-table {
+        export ECMP;
+    }
+}
+protocols {
+    bgp {
+        group STATELESS-LB {
+            local-address 10.136.0.1;
+            hold-time 12;
+            log-updown;
+            peer-as 65401;
+            multipath;
+            neighbor 10.136.0.2;
+        }
+        group STATELESS-LB-2 {
+            local-address 10.136.0.1;
+            hold-time 12;
+            log-updown;
+            peer-as 65401;
+            multipath;
+            neighbor 10.136.0.3;
+        }
+    }
+}
+policy-options {
+    policy-statement ECMP {
+        term LOAD-BALANCE {
+            then {
+                load-balance per-packet;
+            }
+        }
+    }
+}
+
+root@R1>
